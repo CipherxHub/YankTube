@@ -14,20 +14,18 @@ IS_VERCEL = os.environ.get('VERCEL', False)
 
 # Initialize Flask without socketio for Vercel
 app = Flask(__name__)
-if not IS_VERCEL:
-    from flask_socketio import SocketIO, emit, join_room
-    socketio = SocketIO(app, cors_allowed_origins="*")
-
 app.secret_key = "yanktube_secret_key"
 
-# Configure server name for URL generation in background threads
-app.config['SERVER_NAME'] = '127.0.0.1:5000'  # Use your actual server name and port
-app.config['PREFERRED_URL_SCHEME'] = 'http'
-app.config['APPLICATION_ROOT'] = '/'
+# Remove the SERVER_NAME configuration
 
 # Set temporary folder
 DOWNLOAD_FOLDER = '/tmp/downloads' if IS_VERCEL else 'downloads'
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+
+# Only set up socketio if not on Vercel
+if not IS_VERCEL:
+    from flask_socketio import SocketIO, emit, join_room
+    socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Create download folders
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -43,7 +41,7 @@ active_downloads = {}
 def index():
     # Get theme from session if available
     theme = session.get('theme', 'light')
-    return render_template('index.html', theme=theme)
+    return render_template('index.html', theme=theme, is_vercel=IS_VERCEL)
 
 @app.route('/set_theme', methods=['POST'])
 def set_theme():
@@ -294,7 +292,7 @@ def fetch_info():
             
             # Pass theme to template
             theme = session.get('theme', 'light')
-            return render_template('video_info.html', video=video_info, formats=formats, url=url, theme=theme)
+            return render_template('video_info.html', video=video_info, formats=formats, url=url, theme=theme, is_vercel=IS_VERCEL)
     
     except Exception as e:
         print(f"Error in fetch_info: {str(e)}")
@@ -331,7 +329,7 @@ def start_download():
     
     # Pass theme to template
     theme = session.get('theme', 'light')
-    return render_template('download_status.html', download_id=download_id, theme=theme)
+    return render_template('download_status.html', download_id=download_id, theme=theme, is_vercel=IS_VERCEL)
 
 def download_video(url, format_id, audio_only, download_id):
     """Download the video or audio and emit progress events"""
@@ -886,6 +884,32 @@ def api_download_progress(download_id):
         with open(progress_file, 'r') as f:
             return jsonify(json.load(f))
     return jsonify({"status": "waiting", "progress": 0})
+
+# Add these endpoints for Vercel environment
+@app.route('/api/check_download_status/<download_id>')
+def api_check_download_status(download_id):
+    """API to check current download status when SocketIO isn't available"""
+    try:
+        # Check if download ID exists in our tracking dictionary
+        if download_id in active_downloads:
+            download_info = active_downloads[download_id]
+            return jsonify(download_info)
+        
+        # If not in active downloads, check if there's a matching file
+        for filename in os.listdir(DOWNLOAD_FOLDER):
+            if download_id in filename:
+                file_path = os.path.join(DOWNLOAD_FOLDER, filename)
+                if os.path.exists(file_path):
+                    return jsonify({
+                        'status': 'complete',
+                        'filename': filename,
+                        'filepath': file_path
+                    })
+        
+        return jsonify({'status': 'unknown'})
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
 
 # Only run socketio if not on Vercel
 if __name__ == '__main__' and not IS_VERCEL:

@@ -320,13 +320,39 @@
   </footer>
 
   <!-- Socket.IO -->
+  {% if not is_vercel %}
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script>
+    // Socket.IO connection code
+    const socket = io();
+    // ...rest of your Socket.IO code
+  </script>
+  {% else %}
+  <script>
+    // Fallback polling-based approach for Vercel
+    function pollDownloadStatus() {
+      fetch('/api/check_download_status/{{ download_id }}')
+        .then(response => response.json())
+        .then(data => {
+          // Update UI based on data
+          updateProgressUI(data);
+          
+          // Continue polling
+          setTimeout(pollDownloadStatus, 1000);
+        });
+    }
+    
+    // Start polling
+    pollDownloadStatus();
+  </script>
+  {% endif %}
+  
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
   <script>
     const download_id = "{{ download_id }}";
-    const socket = io();
+    // socket is already defined in the Socket.IO script block above
     let progressInterval;
     let statusCheckInterval;
     let isCompleted = false;
