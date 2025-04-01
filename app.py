@@ -6,12 +6,18 @@ import json
 import shutil
 import threading
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, send_file, session
-from flask_socketio import SocketIO, join_room
 from werkzeug.utils import secure_filename
 import yt_dlp
 
-# Create Flask app
+# Detect environment
+IS_VERCEL = os.environ.get('VERCEL', False)
+
+# Initialize Flask without socketio for Vercel
 app = Flask(__name__)
+if not IS_VERCEL:
+    from flask_socketio import SocketIO, emit, join_room
+    socketio = SocketIO(app, cors_allowed_origins="*")
+
 app.secret_key = "yanktube_secret_key"
 
 # Configure server name for URL generation in background threads
@@ -19,16 +25,15 @@ app.config['SERVER_NAME'] = '127.0.0.1:5000'  # Use your actual server name and 
 app.config['PREFERRED_URL_SCHEME'] = 'http'
 app.config['APPLICATION_ROOT'] = '/'
 
-# Setup Socket.IO
-socketio = SocketIO(app)
+# Set temporary folder
+DOWNLOAD_FOLDER = '/tmp/downloads' if IS_VERCEL else 'downloads'
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 # Create download folders
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DOWNLOAD_FOLDER = os.path.join(BASE_DIR, 'temp_downloads')
 PERMANENT_FOLDER = os.path.join(BASE_DIR, 'downloads')
 
 # Create folders if they don't exist
-os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 os.makedirs(PERMANENT_FOLDER, exist_ok=True)
 
 # Dictionary to track active downloads
@@ -452,10 +457,11 @@ def download_video(url, format_id, audio_only, download_id):
         }
         
         # Emit completion event with download URL
-        socketio.emit('complete', {
-            'download_url': download_url,
-            'file_info': file_info
-        }, room=download_id)
+        if not IS_VERCEL:
+            socketio.emit('complete', {
+                'download_url': download_url,
+                'file_info': file_info
+            }, room=download_id)
     
     except Exception as e:
         print(f"Error in download_video: {str(e)}")
@@ -464,7 +470,8 @@ def download_video(url, format_id, audio_only, download_id):
                 'status': 'error',
                 'error': str(e)
             }
-            socketio.emit('error', {'error': str(e)}, room=download_id)
+            if not IS_VERCEL:
+                socketio.emit('error', {'error': str(e)}, room=download_id)
         
         # Clean up temp directory in case of error
         if temp_dir and os.path.exists(temp_dir):
@@ -487,20 +494,38 @@ def progress_hook(d, download_id):
                 percent = 0
                 
             # Emit progress event
-            socketio.emit('progress', {
-                'percent': percent,
-                'downloaded_bytes': downloaded_bytes,
-                'total_bytes': total_bytes,
-                'speed': d.get('speed', 0),
-                'eta': d.get('eta', 0)
-            }, room=download_id)
+            if not IS_VERCEL:
+                socketio.emit('progress', {
+                    'percent': percent,
+                    'downloaded_bytes': downloaded_bytes,
+                    'total_bytes': total_bytes,
+                    'speed': d.get('speed', 0),
+                    'eta': d.get('eta', 0)
+                }, room=download_id)
+            else:
+                progress_info = {
+                    "status": "downloading",
+                    "progress": percent,
+                    "downloaded": downloaded_bytes,
+                    "total": total_bytes,
+                    "speed": d.get('speed', 0),
+                    "eta": d.get('eta', 0)
+                }
+                # Write to file for API polling
+                with open(os.path.join(DOWNLOAD_FOLDER, f"{download_id}_progress.json"), 'w') as f:
+                    json.dump(progress_info, f)
         except Exception as e:
             print(f"Error in progress_hook: {str(e)}")
     elif d['status'] == 'finished':
         # Notify that download is complete, now processing
-        socketio.emit('processing', {
-            'message': 'Download complete, now processing file...'
-        }, room=download_id)
+        if not IS_VERCEL:
+            socketio.emit('processing', {
+                'message': 'Download complete, now processing file...'
+            }, room=download_id)
+        else:
+            progress_info = {"status": "finished", "filename": d.get('filename')}
+            with open(os.path.join(DOWNLOAD_FOLDER, f"{download_id}_progress.json"), 'w') as f:
+                json.dump(progress_info, f)
 
 @app.route('/download/<path:filename>')
 def download_file(filename):
@@ -635,7 +660,8 @@ def cancel_download(download_id):
             print(f"Removed from active downloads")
             
             # Notify client that download was cancelled
-            socketio.emit('cancelled', {}, room=download_id)
+            if not IS_VERCEL:
+                socketio.emit('cancelled', {}, room=download_id)
             
             return jsonify({'success': True})
         else:
@@ -810,13 +836,57 @@ def cleanup_temp_files(download_id):
         print(f"Error in cleanup_temp_files: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
-@socketio.on('join')
-def on_join(data):
-    """Socket.IO event handler for a client joining a room"""
-    download_id = data.get('download_id')
-    if download_id:
-        join_room(download_id)
-        print(f"Client joined room: {download_id}")
+# For Vercel: Create API endpoint instead of using Socket.IO
+@app.route('/api/fetch_video_info', methods=['POST'])
+def api_fetch_video_info():
+    data = request.json
+    url = data.get('url')
+    
+    if not url:
+        return jsonify({"error": "Please provide a valid YouTube URL"}), 400
+    
+    try:
+        # Configure yt-dlp options
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'skip_download': True,
+            'format': 'best'
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            
+            # Check if it's a playlist and get the first video
+            if 'entries' in info:
+                info = info['entries'][0]
+            
+            # Create a simplified video info object
+            video_info = {
+                'id': info.get('id'),
+                'title': info.get('title'),
+                'thumbnail': info.get('thumbnail'),
+                'duration': info.get('duration'),
+                'uploader': info.get('uploader'),
+                'view_count': info.get('view_count'),
+                'formats': info.get('formats', [])
+            }
+            
+            return jsonify({"info": video_info})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
+@app.route('/api/download_progress/<download_id>', methods=['GET'])
+def api_download_progress(download_id):
+    # Create simplified polling endpoint
+    # Check progress file in /tmp
+    progress_file = os.path.join(DOWNLOAD_FOLDER, f"{download_id}_progress.json")
+    if os.path.exists(progress_file):
+        with open(progress_file, 'r') as f:
+            return jsonify(json.load(f))
+    return jsonify({"status": "waiting", "progress": 0})
+
+# Only run socketio if not on Vercel
+if __name__ == '__main__' and not IS_VERCEL:
     socketio.run(app, debug=True)
