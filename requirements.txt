@@ -1,0 +1,7 @@
+Flask==2.3.3
+yt-dlp==2023.7.6
+Flask-SocketIO==5.3.5
+python-socketio==5.8.0
+Werkzeug==2.3.7
+requests==2.31.0
+python-dotenv==1.0.0
