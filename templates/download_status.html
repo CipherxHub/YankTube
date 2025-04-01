@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Download Status - YankTube</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #ff0000;
+      --primary-color-hover: #cc0000;
+      --success-color: #28a745;
+      --warning-color: #f39c12;
+      --text-light: #ffffff;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --body-bg: #f5f5f5;
+      --text-color: #212529;
+      --btn-text: #ffffff;
+    }
+    
+    [data-bs-theme="dark"] {
+      --body-bg: #121212;
+      --card-bg: rgba(30, 30, 30, 0.95);
+      --text-color: #e0e0e0;
+      --btn-text: #ffffff;
+    }
+    
+    body {
+      background: url('https://source.unsplash.com/random/1920x1080/?download,tech') no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: var(--text-color);
+    }
+    
+    /* Header styles */
+    header {
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 15px 20px;
+      border-radius: 0 0 10px 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .logo {
+      font-weight: bold;
+      font-size: 2rem;
+      color: #ff0000;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo span {
+      color: #ffffff;
+    }
+    
+    .logo-icon {
+      margin-right: 10px;
+      font-size: 1.8rem;
+    }
+    
+    .card {
+      border: none;
+      border-radius: 1rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      background-color: var(--card-bg);
+      backdrop-filter: blur(10px);
+      transform: translateY(0);
+      transition: all 0.3s ease;
+    }
+    
+    .card-success {
+      border-left: 5px solid var(--success-color);
+    }
+    
+    .card-error {
+      border-left: 5px solid var(--primary-color);
+    }
+    
+    .card-cancelled {
+      border-left: 5px solid var(--warning-color);
+    }
+    
+    .spinner-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      margin: 2rem 0;
+    }
+    
+    .spinner-border {
+      width: 5rem;
+      height: 5rem;
+      color: var(--primary-color);
+    }
+    
+    .progress {
+      height: 10px;
+      border-radius: 5px;
+      margin: 1.5rem 0;
+    }
+    
+    .btn-success {
+      background-color: var(--success-color);
+      border: none;
+      padding: 0.75rem 2rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      color: var(--btn-text);
+    }
+    
+    .btn-success:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .btn-cancel {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+      background-color: #5a6268;
+      transform: translateY(-2px);
+    }
+    
+    footer {
+      margin-top: auto;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      text-align: center;
+      padding: 15px 0;
+      width: 100%;
+    }
+    
+    /* Download animation */
+    @keyframes downloading {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(10px); }
+      100% { transform: translateY(0px); }
+    }
+    
+    .downloading-animation {
+      animation: downloading 1.5s infinite ease-in-out;
+    }
+    
+    /* Success animation */
+    @keyframes successPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .success-animation {
+      animation: successPulse 1.5s infinite ease-in-out;
+    }
+    
+    .icon-container {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin-bottom: 1.5rem;
+    }
+    
+    .icon-downloading {
+      background-color: rgba(255, 0, 0, 0.1);
+      color: var(--primary-color);
+    }
+    
+    .icon-success {
+      background-color: rgba(40, 167, 69, 0.1);
+      color: var(--success-color);
+    }
+    
+    .icon-error {
+      background-color: rgba(255, 0, 0, 0.1);
+      color: var(--primary-color);
+    }
+    
+    .icon-cancelled {
+      background-color: rgba(243, 156, 18, 0.1);
+      color: var(--warning-color);
+    }
+    
+    .theme-toggle {
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #ffffff;
+      background: none;
+      border: none;
+      transition: transform 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+      transform: rotate(30deg);
+    }
+  </style>
+</head>
+<body>
+  <header class="d-flex justify-content-between align-items-center">
+    <a href="{{ url_for('index') }}" class="logo">
+      <i class="fas fa-video logo-icon"></i>
+      Yank<span>Tube</span>
+    </a>
+    
+    <!-- Theme toggle button -->
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+      <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+  </header>
+  
+  <div class="container my-5">
+    <div class="card p-5 text-center" id="status-card">
+      <h1 class="card-title mb-4" id="status-title">Downloading Your Video...</h1>
+      
+      <!-- Spinner & Progress Animation -->
+      <div id="spinner-container" class="spinner-container">
+        <div class="icon-container icon-downloading downloading-animation">
+          <i class="fas fa-download fa-3x"></i>
+        </div>
+        <div class="progress w-75">
+          <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" role="progressbar" style="width: 0%" id="download-progress"></div>
+        </div>
+        <p class="text-muted" id="progress-text">Starting download...</p>
+        
+        <!-- Cancel button added here -->
+        <div class="mt-4">
+          <button id="cancel-btn" class="btn btn-cancel">
+            <i class="fas fa-times me-2"></i>Cancel Download
+          </button>
+        </div>
+      </div>
+      
+      <!-- Success container with save options -->
+      <div id="success-container" style="display:none;" class="text-center">
+        <div class="icon-container icon-success success-animation">
+          <i class="fas fa-check-circle fa-3x"></i>
+        </div>
+        <h3 class="mb-4">Download Complete!</h3>
+        <p class="mb-2">Your file is ready to download.</p>
+        
+        <!-- File information display -->
+        <div class="alert alert-light mb-4">
+          <div class="row">
+            <div class="col-md-4 text-start">
+              <strong><i class="fas fa-file me-2"></i>File Name:</strong>
+            </div>
+            <div class="col-md-8 text-start">
+              <span id="file-name">Loading...</span>
+            </div>
+          </div>
+
+          <div class="row mt-2">
+            <div class="col-md-4 text-start">
+              <strong><i class="fas fa-file-video me-2"></i>File Type:</strong>
+            </div>
+            <div class="col-md-8 text-start">
+              <span id="file-type">Media file</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Single Download Option -->
+        <div class="d-grid gap-2 mb-4">
+          <a href="#" id="direct-download-btn" class="btn btn-success btn-lg" download>
+            <i class="fas fa-download me-2"></i>Download Now
+          </a>
+        </div>
+        
+        <div class="mt-4">
+          <a href="{{ url_for('index') }}" class="btn btn-outline-secondary" id="back-home-btn">
+            <i class="fas fa-home me-2"></i>Back to Home
+          </a>
+        </div>
+      </div>
+      
+      <!-- Error container -->
+      <div id="error-container" style="display:none;" class="text-center">
+        <div class="icon-container icon-error">
+          <i class="fas fa-exclamation-triangle fa-3x"></i>
+        </div>
+        <h3 class="mb-4">Download Failed</h3>
+        <p class="mb-4" id="error-message">An error occurred during download.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-danger">
+          <i class="fas fa-redo me-2"></i>Try Again
+        </a>
+      </div>
+      
+      <!-- Cancelled container -->
+      <div id="cancelled-container" style="display:none;" class="text-center">
+        <div class="icon-container icon-cancelled">
+          <i class="fas fa-ban fa-3x"></i>
+        </div>
+        <h3 class="mb-4">Download Cancelled</h3>
+        <p class="mb-4">You cancelled the download process.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-warning">
+          <i class="fas fa-redo me-2"></i>Try Again
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    <div class="container">
+      <p class="mb-0">Developed by <a href="https://github.com/CipherxHub" target="_blank" class="text-white">CipherxHub</a> &copy; 2025</p>
+    </div>
+  </footer>
+
+  <!-- Socket.IO -->
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    const download_id = "{{ download_id }}";
+    const socket = io();
+    let progressInterval;
+    let statusCheckInterval;
+    let isCompleted = false;
+    let progressValue = 0;
+    let fileInfo = null;
+    
+    // Theme handling
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      document.documentElement.setAttribute('data-bs-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+      
+      // Save theme preference to server
+      fetch('/set_theme', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'theme=' + newTheme
+      })
+      .catch(error => console.error('Error saving theme preference:', error));
+    }
+    
+    function updateThemeIcon(theme) {
+      const themeIcon = document.getElementById('theme-icon');
+      if (theme === 'dark') {
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+      } else {
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+      }
+    }
+    
+    // Load theme on page load
+    loadTheme();
+    
+    // PROGRESS SIMULATION
+    function startProgressSimulation() {
+      // Clear any existing intervals
+      if (progressInterval) clearInterval(progressInterval);
+      if (statusCheckInterval) clearInterval(statusCheckInterval);
+      
+      // Create a faster, more realistic progress simulation
+      progressInterval = setInterval(() => {
+        if (isCompleted) return;
+        
+        // Dynamic increment rate based on current progress
+        let increment;
+        
+        if (progressValue < 30) {
+          // Start fast (5-15%)
+          increment = 5 + Math.random() * 10;
+        } else if (progressValue < 60) {
+          // Medium speed (2-5%)
+          increment = 2 + Math.random() * 3;
+        } else if (progressValue < 85) {
+          // Slower as we approach completion (0.5-2%)
+          increment = 0.5 + Math.random() * 1.5;
+        } else {
+          // Very slow at the end (0.1-0.5%)
+          increment = 0.1 + Math.random() * 0.4;
+        }
+        
+        // Update progress value (max 99%)
+        progressValue = Math.min(99, progressValue + increment);
+        
+        // Update UI with clean integer
+        updateProgress(Math.floor(progressValue));
+      }, 800);
+      
+      // Add server-side status checking
+      statusCheckInterval = setInterval(() => {
+        checkDownloadStatus();
+      }, 2000); // Check every 2 seconds
+    }
+    
+    // Check the download status from the server
+    function checkDownloadStatus() {
+      if (isCompleted) return;
+      
+      fetch('/check_download_status/' + download_id)
+        .then(response => response.json())
+        .then(data => {
+          console.log('Status check:', data);
+          
+          if (data.status === 'complete') {
+            // If complete, show completion UI
+            const downloadUrl = data.download_url || ('/download/' + data.filename);
+            showCompletionUI(downloadUrl);
+            
+            // Set file info if available
+            if (data.filename) {
+              fileInfo = {
+                name: data.filename,
+                size: 'Unknown',
+                type: data.filename.endsWith('.mp3') ? 'audio/mp3' : 'video/mp4'
+              };
+            }
+          }
+          else if (data.status === 'error') {
+            // Show error UI
+            showErrorUI(data.message || 'Unknown error occurred');
+          }
+        })
+        .catch(error => {
+          console.error('Status check error:', error);
+        });
+    }
+    
+    function updateProgress(value) {
+      document.getElementById('download-progress').style.width = `${value}%`;
+      document.getElementById('progress-text').textContent = `Downloading... ${value}%`;
+    }
+    
+    // Format file size in human-readable format
+
+    
+    // Helper function to ensure we have a full URL
+    function ensureFullUrl(url) {
+      if (!url.startsWith('http') && !url.startsWith('/')) {
+        url = '/' + url;
+      }
+      
+      if (!url.startsWith('http')) {
+        url = window.location.origin + url;
+      }
+      
+      return url;
+    }
+    
+    // UPDATED: Separate UI handlers
+    function showCompletionUI(downloadUrl) {
+      // Skip if already completed
+      if (isCompleted) return;
+      
+      // Mark as completed and clear intervals
+      isCompleted = true;
+      clearInterval(progressInterval);
+      clearInterval(statusCheckInterval);
+      
+      // Update progress bar to 100%
+      document.getElementById('download-progress').style.width = '100%';
+      document.getElementById('progress-text').textContent = 'Download complete!';
+      
+      // Hide spinner, show download link
+      document.getElementById('spinner-container').style.display = 'none';
+      document.getElementById('success-container').style.display = 'block';
+      
+      // Update page title and card style
+      document.getElementById('status-title').innerText = 'Download Complete!';
+      document.getElementById('status-card').classList.add('card-success');
+      
+      // Ensure we have a full URL
+      const fullDownloadUrl = ensureFullUrl(downloadUrl);
+      
+      // Set the download buttons
+      const directDownloadBtn = document.getElementById('direct-download-btn');
+      directDownloadBtn.href = fullDownloadUrl;
+      
+      // Extract filename from URL or use default
+      let filename = fullDownloadUrl.split('/').pop();
+      
+      // Ensure filename always starts with YankTube_
+      if (!filename.startsWith('YankTube_')) {
+        filename = 'YankTube_' + filename;
+        directDownloadBtn.setAttribute('download', filename);
+      }
+      
+      // Update file info display
+      document.getElementById('file-name').textContent = filename || 'Unknown';
+      
+      if (fileInfo) {
+
+        document.getElementById('file-type').textContent = fileInfo.type || 'Media file';
+      }
+      
+      // Update title
+      document.title = 'Download Complete - YankTube';
+    }
+    
+    function showErrorUI(errorMessage) {
+      isCompleted = true;
+      clearInterval(progressInterval);
+      clearInterval(statusCheckInterval);
+      
+      document.getElementById('spinner-container').style.display = 'none';
+      document.getElementById('error-container').style.display = 'block';
+      
+      document.getElementById('error-message').innerText = errorMessage || 'An unknown error occurred';
+      document.getElementById('status-title').innerText = 'Download Failed';
+      document.getElementById('status-card').classList.add('card-error');
+      
+      document.title = 'Download Failed - YankTube';
+    }
+    
+    function showCancelledUI() {
+      isCompleted = true;
+      clearInterval(progressInterval);
+      clearInterval(statusCheckInterval);
+      
+      document.getElementById('spinner-container').style.display = 'none';
+      document.getElementById('cancelled-container').style.display = 'block';
+      
+      document.getElementById('status-title').innerText = 'Download Cancelled';
+      document.getElementById('status-card').classList.add('card-cancelled');
+      
+      document.title = 'Download Cancelled - YankTube';
+    }
+    
+    // Socket.IO event handlers
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      socket.emit('join', { download_id: download_id });
+      
+      // Start progress simulation after joining the room
+      startProgressSimulation();
+    });
+    
+    socket.on('progress', (data) => {
+      updateProgress(data.percent || 0);
+    });
+    
+    socket.on('complete', (data) => {
+      showCompletionUI(data.download_url);
+      
+      // Set file info if available
+      if (data.file_info) {
+        fileInfo = data.file_info;
+      }
+    });
+    
+    socket.on('error', (data) => {
+      showErrorUI(data.error || data.message);
+    });
+    
+    socket.on('cancelled', () => {
+      showCancelledUI();
+    });
+    
+    // Button handlers
+    document.getElementById('cancel-btn').addEventListener('click', function() {
+      fetch('/cancel_download/' + download_id, {
+        method: 'POST'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showCancelledUI();
+        }
+      })
+      .catch(error => {
+        console.error('Error cancelling download:', error);
+      });
+    });
+    
+    // Theme toggle button
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    
+    // Cleanup when user navigates away
+    window.addEventListener('beforeunload', function() {
+      if (!isCompleted) {
+        fetch('/cleanup_temp_files/' + download_id, {
+          method: 'POST',
+          keepalive: true
+        });
+      }
+    });
+    
+    // Start checking download status when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!socket.connected) {
+        startProgressSimulation();
+      }
+    });
+  </script>
+</body>
+</html>

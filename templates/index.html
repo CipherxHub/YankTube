@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="{{ theme }}">
+<head>
+  <meta charset="UTF-8">
+  <title>YankTube - YouTube Video Downloader</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #ff0000;
+      --primary-color-hover: #cc0000;
+      --text-color: #212529;
+      --card-bg: rgba(255, 255, 255, 0.9);
+    }
+    
+    [data-bs-theme="dark"] {
+      --text-color: #ffffff;
+      --card-bg: rgba(33, 37, 41, 0.9);
+    }
+    
+    body {
+      background: url('https://source.unsplash.com/random/1920x1080/?technology,video') no-repeat center center fixed;
+      background-size: cover;
+      transition: all 0.3s ease;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: var(--text-color);
+    }
+    
+    .card {
+      border: none;
+      border-radius: 1rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      background-color: var(--card-bg);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+    
+    /* Header styles */
+    header {
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 15px 20px;
+      border-radius: 0 0 10px 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .logo {
+      font-weight: bold;
+      font-size: 2rem;
+      color: var(--primary-color);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo span {
+      color: #ffffff;
+    }
+    
+    .logo-icon {
+      margin-right: 10px;
+      font-size: 1.8rem;
+    }
+    
+    .theme-toggle {
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #ffffff;
+      background: none;
+      border: none;
+      transition: transform 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+      transform: rotate(30deg);
+    }
+    
+    .btn-custom {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-custom:hover {
+      background-color: var(--primary-color-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    footer {
+      margin-top: auto;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      text-align: center;
+      padding: 15px 0;
+      width: 100%;
+    }
+    
+    .form-control {
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .url-input-group {
+      position: relative;
+    }
+    
+    .url-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+      z-index: 10;
+    }
+    
+    .url-input {
+      padding-left: 40px;
+    }
+    
+    .card-title {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    
+    .features {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin: 2rem 0;
+    }
+    
+    .feature {
+      text-align: center;
+      padding: 1rem;
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .feature i {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+    
+    .alert {
+      border-radius: 0.5rem;
+    }
+    
+    /* Animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    /* Welcome screen styles */
+    .welcome-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.8s ease-out;
+    }
+
+    .welcome-logo {
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--primary-color);
+      text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+      margin-bottom: 1rem;
+      letter-spacing: 2px;
+    }
+
+    .welcome-logo span {
+      color: #ffffff;
+    }
+
+    .welcome-tagline {
+      color: #ffffff;
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      opacity: 0.8;
+    }
+
+    .welcome-loader {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 0, 0, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Welcome Screen -->
+  <div class="welcome-screen" id="welcome-screen">
+    <div class="welcome-logo">Yank<span>Tube</span></div>
+    <p class="welcome-tagline">Your Ultimate YouTube Downloader</p>
+    <div class="welcome-loader"></div>
+  </div>
+
+  <header class="d-flex justify-content-between align-items-center">
+    <a href="{{ url_for('index') }}" class="logo">
+      <i class="fas fa-video logo-icon"></i>
+      Yank<span>Tube</span>
+    </a>
+    
+    <!-- Theme toggle button -->
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+  </header>
+  
+  <div class="container my-5 animate-fade-in">
+    <div class="card p-5">
+      <h1 class="card-title text-center mb-4">Download YouTube Videos</h1>
+      
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-4">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      
+      <form action="{{ url_for('fetch_info') }}" method="POST">
+        <div class="mb-4">
+          <label for="url" class="form-label fw-bold">Enter YouTube URL:</label>
+          <div class="url-input-group">
+            <i class="fas fa-link url-icon"></i>
+            <input type="url" class="form-control url-input" id="url" name="url" placeholder="https://www.youtube.com/watch?v=..." required>
+          </div>
+          <div class="form-text">Paste the URL of the YouTube video you want to download.</div>
+        </div>
+        
+        <div class="d-grid">
+          <button type="submit" class="btn btn-custom btn-lg">
+            <i class="fas fa-search me-2"></i>Get Video Info
+          </button>
+        </div>
+      </form>
+      
+      <div class="features">
+        <div class="feature">
+          <i class="fas fa-bolt"></i>
+          <h4>Fast Download</h4>
+          <p>Download videos quickly with our optimized servers.</p>
+        </div>
+        <div class="feature">
+          <i class="fas fa-sliders-h"></i>
+          <h4>Multiple Formats</h4>
+          <p>Choose from various quality options and formats.</p>
+        </div>
+        <div class="feature">
+          <i class="fas fa-shield-alt"></i>
+          <h4>Safe & Secure</h4>
+          <p>No ads, no tracking, just pure downloading experience.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    <div class="container">
+      <p class="mb-0">Developed by <a href="https://github.com/CipherxHub" target="_blank" class="text-white">CipherxHub</a> &copy; 2025</p>
+    </div>
+  </footer>
+  
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('theme-icon');
+      
+      if (html.getAttribute('data-bs-theme') === 'light') {
+        html.setAttribute('data-bs-theme', 'dark');
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        html.setAttribute('data-bs-theme', 'light');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+        localStorage.setItem('theme', 'light');
+      }
+      
+      // Send theme preference to server
+      saveThemePreference(html.getAttribute('data-bs-theme'));
+    }
+    
+    function saveThemePreference(theme) {
+      fetch('/set_theme', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'theme=' + theme
+      })
+      .catch(error => console.error('Error saving theme preference:', error));
+    }
+    
+    // Load saved theme
+    document.addEventListener('DOMContentLoaded', function() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      
+      const themeIcon = document.getElementById('theme-icon');
+      if (savedTheme === 'dark') {
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+      }
+      
+      // Add animation delay for elements
+      const features = document.querySelectorAll('.feature');
+      features.forEach((feature, index) => {
+        feature.style.animationDelay = `${0.1 * (index + 1)}s`;
+        feature.classList.add('animate-fade-in');
+      });
+
+      // Welcome screen handling
+      const welcomeScreen = document.getElementById('welcome-screen');
+      setTimeout(() => {
+        welcomeScreen.style.opacity = '0';
+        setTimeout(() => {
+          welcomeScreen.style.display = 'none';
+        }, 800);
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

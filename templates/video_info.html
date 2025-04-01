@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="{{ theme }}">
+<head>
+  <meta charset="UTF-8">
+  <title>Video Information - YankTube</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #ff0000;
+      --primary-color-hover: #cc0000;
+      --accent-color: #4285f4;
+      --text-light: #ffffff;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --dark-card-bg: rgba(33, 37, 41, 0.95);
+      --text-color: #212529;
+    }
+    
+    [data-bs-theme="dark"] {
+      --text-color: #ffffff;
+      --card-bg: var(--dark-card-bg);
+    }
+    
+    body {
+      background: url('https://source.unsplash.com/random/1920x1080/?tech,dark') no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: var(--text-color);
+    }
+    
+    /* Header styles */
+    header {
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(15px);
+      padding: 15px 20px;
+      border-radius: 0 0 15px 15px;
+      margin-bottom: 25px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      z-index: 100;
+    }
+    
+    .logo {
+      font-weight: bold;
+      font-size: 2rem;
+      color: var(--primary-color);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo span {
+      color: #ffffff;
+    }
+    
+    .logo-icon {
+      margin-right: 10px;
+      font-size: 1.8rem;
+    }
+    
+    .card {
+      border: none;
+      border-radius: 1rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      background-color: var(--card-bg);
+      backdrop-filter: blur(10px);
+    }
+    
+    .thumbnail-container {
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      position: relative;
+    }
+    
+    .thumbnail-play-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background-color: rgba(255,0,0,0.8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.5rem;
+      opacity: 0.9;
+      transition: all 0.3s ease;
+    }
+    
+    .thumbnail-container:hover .thumbnail-play-button {
+      background-color: rgba(255,0,0,1);
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+    
+    .video-detail {
+      background-color: rgba(0,0,0,0.05);
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .video-title {
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 1rem;
+      color: var(--text-color);
+    }
+    
+    .form-select {
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+    }
+    
+    .form-check-input {
+      width: 1.2em;
+      height: 1.2em;
+    }
+    
+    .btn-back {
+      background-color: #6c757d;
+      color: white;
+    }
+    
+    .btn-download {
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-download:hover {
+      background-color: var(--primary-color-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    footer {
+      margin-top: auto;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      text-align: center;
+      padding: 15px 0;
+      width: 100%;
+    }
+    
+    .badge {
+      font-size: 0.8rem;
+      padding: 0.35em 0.65em;
+    }
+    
+    .video-info-section {
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+      background-color: rgba(0,0,0,0.02);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    /* Theme toggle button */
+    .theme-toggle {
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #ffffff;
+      background: none;
+      border: none;
+      transition: transform 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+      transform: rotate(30deg);
+    }
+
+    /* Format option styles */
+    .format-options-container {
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      background-color: rgba(255,255,255,0.05);
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-color) rgba(0,0,0,0.1);
+    }
+    
+    .format-options-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .format-options-container::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.05);
+      border-radius: 10px;
+    }
+    
+    .format-options-container::-webkit-scrollbar-thumb {
+      background-color: var(--primary-color);
+      border-radius: 10px;
+    }
+    
+    .format-option {
+      border-left: 4px solid var(--primary-color);
+      margin-bottom: 1rem;
+      border-radius: 0.75rem;
+      background-color: rgba(0,0,0,0.02);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      padding: 1rem;
+    }
+    
+    .format-option:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .format-option:after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, rgba(255,255,255,0.03), transparent);
+      pointer-events: none;
+    }
+    
+    .format-option input[type="radio"] {
+      cursor: pointer;
+    }
+    
+    .format-option label {
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .format-option-premium {
+      border-left: 4px solid #4285f4;
+      background-color: rgba(66, 133, 244, 0.05);
+    }
+
+    .format-option-audio {
+      border-left: 4px solid #28a745;
+      background-color: rgba(40, 167, 69, 0.05);
+    }
+    
+    .format-option-hd {
+      border-left: 4px solid #17a2b8;
+      background-color: rgba(23, 162, 184, 0.05);
+    }
+
+    .format-badge {
+      font-size: 0.75rem;
+      padding: 0.25em 0.6em;
+      margin-left: 0.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <header class="d-flex justify-content-between align-items-center px-4 py-3">
+    <a href="{{ url_for('index') }}" class="logo">
+      <i class="fas fa-video logo-icon"></i>
+      Yank<span>Tube</span>
+    </a>
+    
+    <!-- Theme toggle button -->
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+  </header>
+  
+  <div class="container my-4 animate-fade-in">
+    <div class="card p-4">
+      <h1 class="card-title mb-4">Video Information</h1>
+      
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-3">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      
+      <div class="row">
+        <div class="col-lg-4 mb-4">
+          {% if video.thumbnail %}
+            <div class="thumbnail-container">
+              <img src="{{ video.thumbnail }}" alt="Thumbnail" class="img-fluid rounded">
+              <a href="{{ video.webpage_url }}" target="_blank" class="thumbnail-play-button">
+                <i class="fas fa-play"></i>
+              </a>
+            </div>
+          {% else %}
+            <div class="bg-dark text-white p-5 text-center rounded">
+              <i class="fas fa-photo-video fa-3x mb-3"></i>
+              <p>No thumbnail available</p>
+            </div>
+          {% endif %}
+        </div>
+        <div class="col-lg-8">
+          <h3 class="video-title">{{ video.title|default('Untitled Video') }}</h3>
+          <div class="video-info-section">
+            <div class="row mb-2">
+              <div class="col-md-4">
+                <strong><i class="fas fa-user me-2"></i>Channel:</strong>
+              </div>
+              <div class="col-md-8">
+                {{ video.uploader|default('Unknown') }}
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4">
+                <strong><i class="fas fa-clock me-2"></i>Duration:</strong>
+              </div>
+              <div class="col-md-8">
+                {{ video.duration_string|default('Unknown') }}
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4">
+                <strong><i class="fas fa-calendar-alt me-2"></i>Upload Date:</strong>
+              </div>
+              <div class="col-md-8">
+                {{ video.upload_date_formatted|default('Unknown') }}
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4">
+                <strong><i class="fas fa-eye me-2"></i>Views:</strong>
+              </div>
+              <div class="col-md-8">
+                {{ video.view_count_formatted|default('Unknown') }}
+              </div>
+            </div>
+            <div class="row mb-0">
+              <div class="col-md-4">
+                <strong><i class="fas fa-thumbs-up me-2"></i>Likes:</strong>
+              </div>
+              <div class="col-md-8">
+                {{ video.like_count_formatted|default('Not available') }}
+              </div>
+            </div>
+          </div>
+          
+          <form action="{{ url_for('start_download') }}" method="POST">
+            <input type="hidden" name="url" value="{{ video.webpage_url }}">
+            
+            <div class="mb-4">
+              <label for="format" class="form-label fw-bold"><i class="fas fa-sliders-h me-2"></i>Select Format:</label>
+              
+              <div class="format-options-container">
+                <!-- Best Audio Only Option -->
+                <div class="form-check format-option format-option-audio p-3 mb-3">
+                  <input class="form-check-input" type="radio" name="format" id="format_audio" value="bestaudio" data-audio-only="true">
+                  <label class="form-check-label d-flex justify-content-between align-items-center" for="format_audio">
+                    <div>
+                      <i class="fas fa-music me-2"></i>
+                      <strong>Best Audio Quality</strong>
+                      <span class="badge bg-success format-badge">MP3</span>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Best Quality Option -->
+                <div class="form-check format-option format-option-premium p-3 mb-3">
+                  <input class="form-check-input" type="radio" name="format" id="format_best" value="bestvideo+bestaudio" checked>
+                  <label class="form-check-label d-flex justify-content-between align-items-center" for="format_best">
+                    <div>
+                      <i class="fas fa-crown me-2"></i>
+                      <strong>Best Quality</strong>
+                      <span class="badge bg-primary format-badge">MAX</span>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- 720p Option -->
+                <div class="form-check format-option format-option-hd p-3 mb-3">
+                  <input class="form-check-input" type="radio" name="format" id="format_720p" value="best[height<=720]">
+                  <label class="form-check-label d-flex justify-content-between align-items-center" for="format_720p">
+                    <div>
+                      <i class="fas fa-film me-2"></i>
+                      <strong>HD Quality</strong>
+                      <span class="badge bg-info format-badge">720p</span>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- 360p Option -->
+                <div class="form-check format-option p-3 mb-3">
+                  <input class="form-check-input" type="radio" name="format" id="format_360p" value="best[height<=360]">
+                  <label class="form-check-label d-flex justify-content-between align-items-center" for="format_360p">
+                    <div>
+                      <i class="fas fa-video me-2"></i>
+                      <strong>Standard Quality</strong>
+                      <span class="badge bg-secondary format-badge">360p</span>
+                    </div>
+                  </label>
+                </div>
+
+              </div>
+              
+              <div class="form-text mt-2">
+                <i class="fas fa-info-circle me-1"></i>
+                Higher quality formats may result in larger file sizes and longer download times.
+              </div>
+            </div>
+            
+            <div class="mb-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="audio_only" name="audio_only">
+                <label class="form-check-label" for="audio_only">
+                  <i class="fas fa-music me-2"></i>Extract audio only (MP3)
+                </label>
+              </div>
+              <div class="form-text">Converting to MP3 will discard video content.</div>
+            </div>
+            
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('index') }}" class="btn btn-back">
+                <i class="fas fa-arrow-left me-2"></i>Back
+              </a>
+              <button type="submit" class="btn btn-download btn-lg flex-grow-1">
+                <i class="fas fa-download me-2"></i>Download Now
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    <div class="container">
+      <p class="mb-0">Developed by <a href="https://github.com/CipherxHub" target="_blank" class="text-white">CipherxHub</a> &copy; 2025</p>
+    </div>
+  </footer>
+  
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Theme handling functions - defined globally so they can be accessed from HTML onclick
+    function updateThemeIcon(theme) {
+      const themeIcon = document.getElementById('theme-icon');
+      if (theme === 'dark') {
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+      } else {
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+      }
+    }
+    
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+    }
+    
+    function toggleTheme() {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('theme-icon');
+      
+      if (html.getAttribute('data-bs-theme') === 'light') {
+        html.setAttribute('data-bs-theme', 'dark');
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        html.setAttribute('data-bs-theme', 'light');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+        localStorage.setItem('theme', 'light');
+      }
+      
+      // Send theme preference to server
+      saveThemePreference(html.getAttribute('data-bs-theme'));
+    }
+    
+    function saveThemePreference(theme) {
+      fetch('/set_theme', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'theme=' + theme
+      })
+      .catch(error => console.error('Error saving theme preference:', error));
+    }
+    
+    // Format selector logic - Update audio_only checkbox when format changes
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load theme on page load
+      loadTheme();
+      
+      const formatRadios = document.querySelectorAll('input[name="format"]');
+      const audioOnlyCheckbox = document.getElementById('audio_only');
+      
+      if (formatRadios.length > 0 && audioOnlyCheckbox) {
+        // Set initial state based on selected option
+        updateAudioOnlyFromFormat();
+        
+        // Add change listeners to all radio buttons
+        formatRadios.forEach(radio => {
+          radio.addEventListener('change', updateAudioOnlyFromFormat);
+        });
+      }
+      
+      function updateAudioOnlyFromFormat() {
+        // Find the selected radio button
+        const selectedRadio = document.querySelector('input[name="format"]:checked');
+        if (selectedRadio) {
+          const isAudioOnly = selectedRadio.getAttribute('data-audio-only') === 'true';
+          
+          // Update checkbox
+          audioOnlyCheckbox.checked = isAudioOnly;
+        }
+      }
+      
+      // Add visual feedback when selecting a format option
+      const formatOptions = document.querySelectorAll('.format-option');
+      formatOptions.forEach(option => {
+        option.addEventListener('click', function() {
+          // Find the radio input within this option and check it
+          const radio = this.querySelector('input[type="radio"]');
+          if (radio) {
+            radio.checked = true;
+            // Trigger the change event manually
+            radio.dispatchEvent(new Event('change'));
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
